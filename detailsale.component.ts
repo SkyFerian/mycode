@@ -294,6 +294,7 @@ export class DetailSaleComponent implements OnInit {
     this.route.queryParams.subscribe((params: Params) => {
       this.id = +params['id'];
     });
+
     this.putvalue();
   }
 
@@ -379,6 +380,7 @@ export class DetailSaleComponent implements OnInit {
   putvalue(): void {
     this.saleService.getinvoice(this.id!).subscribe((response: MySales) => {
       this.mySales = response;
+      console.log(JSON.stringify(this.mySales));
       this.detailForm.setValue({
         facnr: this.mySales.facnr,
         information: this.mySales.information,

@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { MySaleService } from '../../../services/saleapi.services';
 import { ButtonComponent } from '@codex-ui/button';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
@@ -208,12 +213,12 @@ import { Observable, debounceTime, distinctUntilChanged, map } from 'rxjs';
     HttpClientModule,
     FormsModule,
   ],
-  providers: [MySaleService],
+  providers: [],
   standalone: true,
   styleUrls: ['./sales.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SalesComponent {
+export class SalesComponent implements OnInit {
   faCircleCheck = faCircleCheck;
   faSpinner = faSpinner;
   faBusinessTime = faBusinessTime;
@@ -235,12 +240,14 @@ export class SalesComponent {
     yes: false,
     no: false,
   };
-  mySales$!: Observable<MySales[]>;
-  private mySaleService: MySaleService = inject(MySaleService);
+  mySales$: Observable<MySales[]> | undefined;
+
   private readonly router = inject(Router);
-  constructor(private route: ActivatedRoute, private http: HttpClient) {
-    this.mySales$ = this.getall();
-  }
+  constructor(
+    private route: ActivatedRoute,
+    private http: HttpClient,
+    private mySaleService: MySaleService
+  ) {}
   headers: { [key: string]: string } = {
     facnr: 'Factuur nummer',
     createdat: 'Aangemaakt op',
@@ -250,6 +257,9 @@ export class SalesComponent {
     accountant: 'Boekhouder',
     status: 'Status',
   };
+  ngOnInit() {
+    this.mySales$ = this.mySaleService.getinvoices();
+  }
   sortTable(name: string) {
     if (this.sortField === name) {
       // Omgekeerde sortering als er voor een tweede keer op dezelfde naam wordt geklikt
@@ -292,10 +302,8 @@ export class SalesComponent {
   }
 
   detailpage(currentID: number): void {
-    this.mySaleService.getinvoice(currentID).subscribe((response: MySales) => {
-      this.router.navigate(['invoicing/detailsale/:'], {
-        queryParams: { id: currentID },
-      });
+    this.router.navigate(['invoicing/detailsale/:'], {
+      queryParams: { id: currentID },
     });
   }
   routingadd() {

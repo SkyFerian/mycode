@@ -28,7 +28,14 @@ import { TOAST_STATE } from '@codex-ui/mytoast';
 
 @Component({
   template: `
-    '<iframe id="myframe" *ngIf="pdfSrc" [src]="pdfSrc"></iframe>'
+    '<iframe
+      *ngIf="pdfSrc"
+      [src]="pdfSrc"
+      width="100%"
+      height="600"
+      frameborder="0"
+    ></iframe
+    >'
 
     <form
       [formGroup]="addForm"
@@ -267,7 +274,7 @@ import { TOAST_STATE } from '@codex-ui/mytoast';
     ReactiveFormsModule,
     HttpClientModule,
   ],
-  providers: [MySaleService, DatePipe],
+  providers: [DatePipe],
   standalone: true,
   styleUrls: ['./addsale.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -290,6 +297,8 @@ export class AddSaleComponent implements OnInit {
   booldisable = true;
   checknumber: number | undefined;
   constructor(
+    private router: Router,
+    private mySaleService: MySaleService,
     private toast: myToastService,
     public datepipe: DatePipe,
     private http: HttpClient,
@@ -376,15 +385,10 @@ export class AddSaleComponent implements OnInit {
   });
   allstatus = [{ name: 'Active' }, { name: 'Processing' }, { name: 'Pending' }];
   selectaccountant = [{ name: 'Yes' }, { name: 'No' }];
-  public currentInvoice!: MySales;
-  private mySaleService: MySaleService = inject(MySaleService);
-  private readonly router = inject(Router);
+  public currentInvoices!: MySales;
 
   addfunction() {
     this.data = this.generateData();
-    console.log('generation here');
-    console.log(this.data);
-
     this.mySaleService.getinvoices().subscribe((invoices: MySales[]) => {
       const existingIds = invoices.map((invoice) => invoice.id);
       const maxId = Math.max(...existingIds);
@@ -455,29 +459,29 @@ export class AddSaleComponent implements OnInit {
     this.mySaleService.getinvoices().subscribe((sales: MySales) => {
       this.addForm.controls['totalamount'].disable();
       this.addForm.controls['btw'].disable();
-      this.currentInvoice = sales;
+      this.currentInvoices = sales;
       //binden van formulier
       this.addForm.reset({
-        facnr: this.currentInvoice.facnr,
-        information: this.currentInvoice.information,
-        variety: this.currentInvoice.variety,
-        city: this.currentInvoice.city,
-        client: this.currentInvoice.client,
-        addressclient: this.currentInvoice.addressclient,
-        postalclient: this.currentInvoice.postalclient,
-        land: this.currentInvoice.land,
-        enterprisenumber: this.currentInvoice.enterprisenumber,
-        statement: this.currentInvoice.statement,
-        createdat: this.currentInvoice.createdat,
-        description: this.currentInvoice.description,
-        amount: this.currentInvoice.amount,
-        discount: this.currentInvoice.discount,
-        btwprocent: this.currentInvoice.btwprocent,
-        btw: this.currentInvoice.btw,
-        totalamount: this.currentInvoice.totalamount,
-        accountant: this.currentInvoice.accountant,
-        mystatus: this.currentInvoice.mystatus,
-        lastupdated: this.currentInvoice.lastupdated, //binden omdat functie word geroepen vanuit angular niet van deze class
+        facnr: this.currentInvoices.facnr,
+        information: this.currentInvoices.information,
+        variety: this.currentInvoices.variety,
+        city: this.currentInvoices.city,
+        client: this.currentInvoices.client,
+        addressclient: this.currentInvoices.addressclient,
+        postalclient: this.currentInvoices.postalclient,
+        land: this.currentInvoices.land,
+        enterprisenumber: this.currentInvoices.enterprisenumber,
+        statement: this.currentInvoices.statement,
+        createdat: this.currentInvoices.createdat,
+        description: this.currentInvoices.description,
+        amount: this.currentInvoices.amount,
+        discount: this.currentInvoices.discount,
+        btwprocent: this.currentInvoices.btwprocent,
+        btw: this.currentInvoices.btw,
+        totalamount: this.currentInvoices.totalamount,
+        accountant: this.currentInvoices.accountant,
+        mystatus: this.currentInvoices.mystatus,
+        lastupdated: this.currentInvoices.lastupdated, //binden omdat functie word geroepen vanuit angular niet van deze class
       });
     });
 
@@ -553,8 +557,7 @@ export class AddSaleComponent implements OnInit {
     return '';
   }
   generateData(): any {
-    if (this.checknumber == 0) {
-      console.log('generator');
+    if (this.checknumber === 0) {
       const myDate = new Date();
       const formattedDate = this.datepipe.transform(myDate, 'yyyy-MM-dd');
       const nextDate = new Date(myDate.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -619,29 +622,19 @@ export class AddSaleComponent implements OnInit {
       this.modalView$?.nativeElement.classList.remove('visible');
     }
   }
-
-  loadPdf() {
+  loadPdf(): void {
     this.data = this.generateData();
     this.fileservice.previewPDF(this.data).subscribe((blob: Blob) => {
-      console.log('PDF Blob received:', blob);
-
       const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      console.log(pdfBlob);
       const url = URL.createObjectURL(pdfBlob);
-
-      setTimeout(() => {
-        this.pdfSrc = this.bypassAndSanitize(url);
-        console.log('PDF URL:', url);
-      }, 100);
-
-      (error: Error) => {
+      this.pdfSrc = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }),
+      (error: any) => {
         console.error('Error occurred while generating PDF:', error);
-        this.toast.showToast(
-          TOAST_STATE.danger,
-          'Something went wrong trying to create'
-        );
       };
-    });
   }
+
   bypassAndSanitize(url: any): SafeResourceUrl {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
